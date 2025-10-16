@@ -28,5 +28,11 @@ Route::middleware(['jwt.verify', 'user.active'])->group(function () {
     Route::middleware('role.level:1,2')->group(function () {
         Route::apiResource('users', UserController::class);
         Route::get('users/roles/available', [UserController::class, 'availableRoles']);
+        
+        // Audit logs (only for superadmin and admin)
+        Route::get('audit-logs', [\App\Http\Controllers\Api\AuditLogController::class, 'index']);
+        Route::get('audit-logs/{auditLog}', [\App\Http\Controllers\Api\AuditLogController::class, 'show']);
+        Route::get('audit-logs/filters/actions', [\App\Http\Controllers\Api\AuditLogController::class, 'getActions']);
+        Route::get('audit-logs/filters/entity-types', [\App\Http\Controllers\Api\AuditLogController::class, 'getEntityTypes']);
     });
 });
