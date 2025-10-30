@@ -65,12 +65,12 @@ class DashboardController extends Controller
                     'permissions' => ['read', 'write', 'admin'],
                 ],
                 [
-                    'id' => 'inventory',
-                    'name' => 'Inventory Management',
-                    'description' => 'Comprehensive inventory tracking system',
-                    'url' => env('INVENTORY_URL', 'http://127.0.0.1:8002'),
-                    'icon' => 'inventory',
-                    'color' => 'green',
+                    'id' => 'ams',
+                    'name' => 'Arrival Management System',
+                    'description' => 'Arrival management system for incoming goods',
+                    'url' => env('AMS_URL', 'http://localhost:5174'),
+                    'icon' => 'truck',
+                    'color' => 'red',
                     'permissions' => ['read', 'write', 'admin'],
                 ],
             ];
@@ -117,7 +117,7 @@ class DashboardController extends Controller
 
         $projectUrls = [
             'fg-store' => env('FG_STORE_URL', 'http://127.0.0.1:8001'),
-            'inventory' => env('INVENTORY_URL', 'http://127.0.0.1:8002'),
+            'ams' => env('AMS_URL', 'http://localhost:5174'),
         ];
 
         if (!isset($projectUrls[$projectId])) {
