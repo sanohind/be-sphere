@@ -51,6 +51,7 @@ class UserController extends Controller
             'phone_number' => 'nullable|string|max:20',
             'role_id' => 'required|exists:roles,id',
             'department_id' => 'nullable|exists:departments,id',
+            'is_active' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -90,6 +91,25 @@ class UserController extends Controller
      */
     public function show(User $user): JsonResponse
     {
+        $viewer = Auth::user();
+        
+        // Check if viewer has permission to see this user
+        if ($viewer->isAdmin()) {
+            // Admin can only see users in their department
+            if (!$viewer->department_id || $user->department_id !== $viewer->department_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to view this user',
+                ], 403);
+            }
+        } elseif (!$viewer->isSuperadmin()) {
+            // Only superadmin and admin can view user details
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to view users',
+            ], 403);
+        }
+
         $user->load(['role', 'department', 'creator']);
 
         return response()->json([
@@ -147,6 +167,31 @@ class UserController extends Controller
     }
 
     /**
+     * Delete User
+     * 
+     * @group User Management
+     * @authenticated
+     */
+    public function destroy(User $user): JsonResponse
+    {
+        try {
+            $deleter = Auth::user();
+            $this->userService->deleteUser($user, $deleter);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User deleted successfully',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
      * Get Available Roles (based on creator permission)
      * 
      * @group User Management
@@ -160,10 +205,9 @@ class UserController extends Controller
             // Superadmin can see all roles
             $roles = Role::where('is_active', true)->get();
         } elseif ($creator->isAdmin()) {
-            // Admin can only see operator roles in their department
+            // Admin can only see operator role
             $roles = Role::where('is_active', true)
                 ->where('level', 3)
-                ->where('department_id', $creator->department_id)
                 ->get();
         } else {
             $roles = collect([]);

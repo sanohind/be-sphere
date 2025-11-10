@@ -117,8 +117,7 @@ class User extends Authenticatable implements JWTSubject
 
         // Admin hanya bisa buat operator di departmentnya
         if ($this->isAdmin()) {
-            return $roleToCreate->level === 3 
-                && $roleToCreate->department_id === $this->department_id;
+            return $roleToCreate->level === 3;
         }
 
         return false;

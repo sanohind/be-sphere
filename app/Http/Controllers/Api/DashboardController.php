@@ -46,7 +46,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get available projects based on user role
+     * Get available projects based on user role and department
      */
     private function getAvailableProjects($user): array
     {
@@ -75,33 +75,40 @@ class DashboardController extends Controller
                 ],
             ];
         }
-        // Admin can access department-specific projects
-        elseif ($user->isAdmin()) {
-            $projects = [
-                [
-                    'id' => 'fg-store',
-                    'name' => 'Finish Good Store',
-                    'description' => 'Warehouse management system for finished goods',
-                    'url' => env('FG_STORE_URL', 'http://127.0.0.1:8001'),
-                    'icon' => 'warehouse',
-                    'color' => 'blue',
-                    'permissions' => ['read', 'write'],
+        // Other users (Admin/Operator) access projects based on their department
+        else {
+            $departmentCode = $user->department?->code;
+
+            // Define department-based project mapping
+            $departmentProjects = [
+                'WH' => [ // Warehouse department
+                    [
+                        'id' => 'ams',
+                        'name' => 'Arrival Management System',
+                        'description' => 'Arrival management system for incoming goods',
+                        'url' => env('AMS_URL', 'http://localhost:5174'),
+                        'icon' => 'truck',
+                        'color' => 'red',
+                        'permissions' => $user->isAdmin() ? ['read', 'write'] : ['read'],
+                    ],
+                ],
+                'LOG' => [ // Logistics department
+                    [
+                        'id' => 'fg-store',
+                        'name' => 'Finish Good Store',
+                        'description' => 'Warehouse management system for finished goods',
+                        'url' => env('FG_STORE_URL', 'http://127.0.0.1:8001'),
+                        'icon' => 'warehouse',
+                        'color' => 'blue',
+                        'permissions' => $user->isAdmin() ? ['read', 'write'] : ['read'],
+                    ],
                 ],
             ];
-        }
-        // Operator can access limited functionality
-        elseif ($user->isOperator()) {
-            $projects = [
-                [
-                    'id' => 'fg-store',
-                    'name' => 'Finish Good Store',
-                    'description' => 'Warehouse operations interface',
-                    'url' => env('FG_STORE_URL', 'http://127.0.0.1:8001'),
-                    'icon' => 'warehouse',
-                    'color' => 'blue',
-                    'permissions' => ['read'],
-                ],
-            ];
+
+            // Get projects based on department code
+            if ($departmentCode && isset($departmentProjects[$departmentCode])) {
+                $projects = $departmentProjects[$departmentCode];
+            }
         }
 
         return $projects;
@@ -113,6 +120,19 @@ class DashboardController extends Controller
     public function getProjectUrl(string $projectId): JsonResponse
     {
         $user = JWTAuth::user();
+        $user->load(['role', 'department']);
+        
+        // Check if user has access to this project
+        $availableProjects = $this->getAvailableProjects($user);
+        $hasAccess = collect($availableProjects)->contains('id', $projectId);
+
+        if (!$hasAccess) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have access to this project'
+            ], 403);
+        }
+
         $token = JWTAuth::fromUser($user);
 
         $projectUrls = [

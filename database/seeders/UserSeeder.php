@@ -18,7 +18,7 @@ class UserSeeder extends Seeder
             'name' => 'Super Administrator',
             'nik' => 'SA001',
             'phone_number' => '081234567890',
-            'role_id' => 1,
+            'role_id' => 1, // superadmin
             'department_id' => null,
             'created_by' => null,
             'is_active' => true,
@@ -32,8 +32,8 @@ class UserSeeder extends Seeder
             'name' => 'Zaki',
             'nik' => 'WH001',
             'phone_number' => '081234567891',
-            'role_id' => 3, // admin-warehouse
-            'department_id' => 2,
+            'role_id' => 2, // admin
+            'department_id' => 2, // Warehouse
             'created_by' => $superadmin->id,
             'is_active' => true,
         ]);
@@ -46,8 +46,8 @@ class UserSeeder extends Seeder
             'name' => 'Ahmad',
             'nik' => 'FIN001',
             'phone_number' => '081234567892',
-            'role_id' => 4, // admin-finance
-            'department_id' => 3,
+            'role_id' => 2, // admin
+            'department_id' => 3, // Finance
             'created_by' => $superadmin->id,
             'is_active' => true,
         ]);
@@ -60,8 +60,8 @@ class UserSeeder extends Seeder
             'name' => 'Ichwan',
             'nik' => 'WH002',
             'phone_number' => '081234567893',
-            'role_id' => 7, // operator-warehouse
-            'department_id' => 2,
+            'role_id' => 3, // operator
+            'department_id' => 2, // Warehouse
             'created_by' => $zaki->id,
             'is_active' => true,
         ]);

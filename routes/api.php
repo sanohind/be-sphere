@@ -24,6 +24,9 @@ Route::middleware(['jwt.verify', 'user.active'])->group(function () {
     Route::get('dashboard', [\App\Http\Controllers\Api\DashboardController::class, 'index']);
     Route::get('dashboard/project/{projectId}/url', [\App\Http\Controllers\Api\DashboardController::class, 'getProjectUrl']);
 
+    // Departments (available for authenticated users)
+    Route::get('departments', [\App\Http\Controllers\Api\DepartmentController::class, 'index']);
+
     // User management (only for superadmin and admin)
     Route::middleware('role.level:1,2')->group(function () {
         Route::apiResource('users', UserController::class);
@@ -34,5 +37,10 @@ Route::middleware(['jwt.verify', 'user.active'])->group(function () {
         Route::get('audit-logs/{auditLog}', [\App\Http\Controllers\Api\AuditLogController::class, 'show']);
         Route::get('audit-logs/filters/actions', [\App\Http\Controllers\Api\AuditLogController::class, 'getActions']);
         Route::get('audit-logs/filters/entity-types', [\App\Http\Controllers\Api\AuditLogController::class, 'getEntityTypes']);
+    });
+
+    // Department management (only for superadmin)
+    Route::middleware('role.level:1')->group(function () {
+        Route::apiResource('departments', \App\Http\Controllers\Api\DepartmentController::class)->except(['index']);
     });
 });

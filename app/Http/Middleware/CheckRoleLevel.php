@@ -13,7 +13,7 @@ class CheckRoleLevel
     /**
      * Handle an incoming request.
      * 
-     * @param int|array $levels - RoleLevel values (1,2,3,4)
+     * @param int|array $levels - RoleLevel values (1,2,3)
      * Usage in routes: ->middleware('role.level:1,2')
      */
     public function handle(Request $request, Closure $next, ...$levels): Response
