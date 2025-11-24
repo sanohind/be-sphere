@@ -73,6 +73,24 @@ class DashboardController extends Controller
                     'color' => 'red',
                     'permissions' => ['read', 'write', 'admin'],
                 ],
+                [
+                    'id' => 'arrival-dashboard',
+                    'name' => 'Arrival Dashboard (Public)',
+                    'description' => 'Arrival Dashboard for public access',
+                    'url' => env('ARRIVAL_DASHBOARD_URL', 'http://localhost:5174/arrival-dashboard'),
+                    'icon' => 'arrival',
+                    'color' => 'green',
+                    'permissions' => ['read'],
+                ],
+                [
+                    'id' => 'arrival-check',
+                    'name' => 'Arrival Check (Public)',
+                    'description' => 'Arrival Check for driver',
+                    'url' => env('ARRIVAL_CHECK_URL', 'http://localhost:5174/driver'),
+                    'icon' => 'driver',
+                    'color' => 'yellow',
+                    'permissions' => ['read'],
+                ],
             ];
         }
         // Other users (Admin/Operator) access projects based on their department
@@ -90,6 +108,24 @@ class DashboardController extends Controller
                         'icon' => 'truck',
                         'color' => 'red',
                         'permissions' => $user->isAdmin() ? ['read', 'write'] : ['read'],
+                    ],
+                    [
+                        'id' => 'arrival-dashboard',
+                        'name' => 'Arrival Dashboard (Public)',
+                        'description' => 'Arrival Dashboard for public access',
+                        'url' => env('ARRIVAL_DASHBOARD_URL', 'http://localhost:5174/arrival-dashboard'),
+                        'icon' => 'arrival',
+                        'color' => 'green',
+                        'permissions' => ['read'],
+                    ],
+                    [
+                        'id' => 'arrival-check',
+                        'name' => 'Arrival Check (Public)',
+                        'description' => 'Arrival Check for driver',
+                        'url' => env('ARRIVAL_CHECK_URL', 'http://localhost:5174/driver'),
+                        'icon' => 'driver',
+                        'color' => 'yellow',
+                        'permissions' => ['read'],
                     ],
                 ],
                 'LOG' => [ // Logistics department
@@ -133,11 +169,15 @@ class DashboardController extends Controller
             ], 403);
         }
 
-        $token = JWTAuth::fromUser($user);
+        // Define public projects that don't require authentication
+        $publicProjects = ['arrival-dashboard', 'arrival-check'];
 
+        // Define project URLs
         $projectUrls = [
             'fg-store' => env('FG_STORE_URL', 'http://127.0.0.1:8001'),
             'ams' => env('AMS_URL', 'http://localhost:5174'),
+            'arrival-dashboard' => env('ARRIVAL_DASHBOARD_URL', 'http://localhost:5174/arrival-dashboard'),
+            'arrival-check' => env('ARRIVAL_CHECK_URL', 'http://localhost:5174/driver'),
         ];
 
         if (!isset($projectUrls[$projectId])) {
@@ -148,6 +188,20 @@ class DashboardController extends Controller
         }
 
         $projectUrl = $projectUrls[$projectId];
+
+        // For public projects, return URL directly without token
+        if (in_array($projectId, $publicProjects)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'url' => $projectUrl,
+                    'project_id' => $projectId,
+                ],
+            ]);
+        }
+
+        // For authenticated projects, append token
+        $token = JWTAuth::fromUser($user);
         $urlWithToken = $projectUrl . '/sso/callback?token=' . $token;
 
         return response()->json([

@@ -51,7 +51,6 @@ class DepartmentController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:20|unique:departments,code',
-            'description' => 'nullable|string',
             'is_active' => 'nullable|boolean',
         ]);
 
@@ -90,7 +89,6 @@ class DepartmentController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:100',
             'code' => 'sometimes|string|max:20|unique:departments,code,' . $department->id,
-            'description' => 'nullable|string',
             'is_active' => 'sometimes|boolean',
         ]);
 

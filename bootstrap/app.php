@@ -19,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role.level' => \App\Http\Middleware\CheckRoleLevel::class,
         ]);
 
+        // Session middleware is now available since sessions table has been created
+        // This allows web routes to use session if needed (e.g., CSRF protection)
+
         // Optional: Apply middleware to all API routes
         // $middleware->api(prepend: [
         //     \App\Http\Middleware\JWTMiddleware::class,

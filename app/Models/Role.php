@@ -14,7 +14,6 @@ class Role extends Model
         'name',
         'slug',
         'level',
-        'description',
         'is_active',
     ];
 

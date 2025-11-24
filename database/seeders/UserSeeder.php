@@ -24,7 +24,7 @@ class UserSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // 2. Admin Warehouse (Zaki)
+        // 2. Admin Warehouse 
         $zaki = User::create([
             'email' => 'zaki@besphere.com',
             'username' => 'zaki',
@@ -38,7 +38,7 @@ class UserSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // 3. Admin Finance (Ahmad)
+        // 3. Admin Finance 
         $ahmad = User::create([
             'email' => 'ahmad@besphere.com',
             'username' => 'ahmad',
@@ -52,7 +52,7 @@ class UserSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // 4. Operator Warehouse (Ichwan) - created by Zaki
+        // 4. Operator Warehouse 
         User::create([
             'email' => 'ichwan@besphere.com',
             'username' => 'ichwan',
