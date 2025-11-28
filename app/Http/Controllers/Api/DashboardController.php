@@ -68,7 +68,7 @@ class DashboardController extends Controller
                     'id' => 'ams',
                     'name' => 'Arrival Management System',
                     'description' => 'Arrival management system for incoming goods',
-                    'url' => env('AMS_URL', 'http://localhost:5174'),
+                    'url' => env('AMS_URL', 'http://localhost:5174/#/'),
                     'icon' => 'truck',
                     'color' => 'red',
                     'permissions' => ['read', 'write', 'admin'],
@@ -77,7 +77,7 @@ class DashboardController extends Controller
                     'id' => 'arrival-dashboard',
                     'name' => 'Arrival Dashboard (Public)',
                     'description' => 'Arrival Dashboard for public access',
-                    'url' => env('ARRIVAL_DASHBOARD_URL', 'http://localhost:5174/arrival-dashboard'),
+                    'url' => env('ARRIVAL_DASHBOARD_URL', 'http://localhost:5174/#/arrival-dashboard'),
                     'icon' => 'arrival',
                     'color' => 'green',
                     'permissions' => ['read'],
@@ -86,7 +86,7 @@ class DashboardController extends Controller
                     'id' => 'arrival-check',
                     'name' => 'Arrival Check (Public)',
                     'description' => 'Arrival Check for driver',
-                    'url' => env('ARRIVAL_CHECK_URL', 'http://localhost:5174/driver'),
+                    'url' => env('ARRIVAL_CHECK_URL', 'http://localhost:5174/#/driver'),
                     'icon' => 'driver',
                     'color' => 'yellow',
                     'permissions' => ['read'],
@@ -104,7 +104,7 @@ class DashboardController extends Controller
                         'id' => 'ams',
                         'name' => 'Arrival Management System',
                         'description' => 'Arrival management system for incoming goods',
-                        'url' => env('AMS_URL', 'http://localhost:5174'),
+                        'url' => env('AMS_URL', 'http://localhost:5174/#/'),
                         'icon' => 'truck',
                         'color' => 'red',
                         'permissions' => $user->isAdmin() ? ['read', 'write'] : ['read'],
@@ -113,7 +113,7 @@ class DashboardController extends Controller
                         'id' => 'arrival-dashboard',
                         'name' => 'Arrival Dashboard (Public)',
                         'description' => 'Arrival Dashboard for public access',
-                        'url' => env('ARRIVAL_DASHBOARD_URL', 'http://localhost:5174/arrival-dashboard'),
+                        'url' => env('ARRIVAL_DASHBOARD_URL', 'http://localhost:5174/#/arrival-dashboard'),
                         'icon' => 'arrival',
                         'color' => 'green',
                         'permissions' => ['read'],
@@ -122,7 +122,7 @@ class DashboardController extends Controller
                         'id' => 'arrival-check',
                         'name' => 'Arrival Check (Public)',
                         'description' => 'Arrival Check for driver',
-                        'url' => env('ARRIVAL_CHECK_URL', 'http://localhost:5174/driver'),
+                        'url' => env('ARRIVAL_CHECK_URL', 'http://localhost:5174/#/driver'),
                         'icon' => 'driver',
                         'color' => 'yellow',
                         'permissions' => ['read'],
@@ -175,9 +175,9 @@ class DashboardController extends Controller
         // Define project URLs
         $projectUrls = [
             'fg-store' => env('FG_STORE_URL', 'http://127.0.0.1:8001'),
-            'ams' => env('AMS_URL', 'http://localhost:5174'),
-            'arrival-dashboard' => env('ARRIVAL_DASHBOARD_URL', 'http://localhost:5174/arrival-dashboard'),
-            'arrival-check' => env('ARRIVAL_CHECK_URL', 'http://localhost:5174/driver'),
+            'ams' => env('AMS_URL', 'http://localhost:5174/#/'),
+            'arrival-dashboard' => env('ARRIVAL_DASHBOARD_URL', 'http://localhost:5174/#/arrival-dashboard'),
+            'arrival-check' => env('ARRIVAL_CHECK_URL', 'http://localhost:5174/#/driver'),
         ];
 
         if (!isset($projectUrls[$projectId])) {
@@ -202,7 +202,15 @@ class DashboardController extends Controller
 
         // For authenticated projects, append token
         $token = JWTAuth::fromUser($user);
-        $urlWithToken = $projectUrl . '/sso/callback?token=' . $token;
+
+        // Normalize base URL (remove trailing slash)
+        $urlParts = explode('#', $projectUrl);
+        $baseUrl = rtrim($urlParts[0], '/');
+        $usesHashRouting = str_contains($projectUrl, '#');
+
+        // Build callback path based on routing mode
+        $callbackPath = $usesHashRouting ? '/#/sso/callback' : '/sso/callback';
+        $urlWithToken = $baseUrl . $callbackPath . '?token=' . $token;
 
         return response()->json([
             'success' => true,

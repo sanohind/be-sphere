@@ -16,7 +16,7 @@ Route::get('/dashboard', function () {
 })->name('dashboard');
 
 Route::get('/sso/login', function (Request $request) {
-    $redirect = $request->query('redirect', 'http://localhost:5174/sso/callback'); // fallback AMS
-    $feSphereLogin = env('FE_SPHERE_LOGIN_URL', 'http://localhost:5173/signin');
+    $redirect = $request->query('redirect', 'http://localhost:5174/#/sso/callback'); // fallback AMS
+    $feSphereLogin = env('FE_SPHERE_LOGIN_URL', 'http://localhost:5173/#/signin');
     return redirect()->away($feSphereLogin.'?redirect='.urlencode($redirect));
 });
