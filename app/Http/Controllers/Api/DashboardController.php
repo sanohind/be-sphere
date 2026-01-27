@@ -91,6 +91,15 @@ class DashboardController extends Controller
                     'color' => 'yellow',
                     'permissions' => ['read'],
                 ],
+                [
+                    'id' => 'scope',
+                    'name' => 'SCOPE Application',
+                    'description' => 'Inventory and Warehouse management',
+                    'url' => env('SCOPE_URL', 'http://localhost:5173'),
+                    'icon' => 'box',
+                    'color' => 'purple',
+                    'permissions' => ['read', 'write', 'admin'],
+                ],
             ];
         }
         // Other users (Admin/Operator) access projects based on their department
@@ -127,6 +136,15 @@ class DashboardController extends Controller
                         'color' => 'yellow',
                         'permissions' => ['read'],
                     ],
+                    [
+                        'id' => 'scope',
+                        'name' => 'SCOPE Application',
+                        'description' => 'Inventory and Warehouse management',
+                        'url' => env('SCOPE_URL', 'http://localhost:5173'),
+                        'icon' => 'box',
+                        'color' => 'purple',
+                        'permissions' => $user->isAdmin() ? ['read', 'write'] : ['read'],
+                    ],
                 ],
                 'LOG' => [ // Logistics department
                     [
@@ -136,6 +154,15 @@ class DashboardController extends Controller
                         'url' => env('FG_STORE_URL', 'http://127.0.0.1:8001'),
                         'icon' => 'warehouse',
                         'color' => 'blue',
+                        'permissions' => $user->isAdmin() ? ['read', 'write'] : ['read'],
+                    ],
+                    [
+                        'id' => 'scope',
+                        'name' => 'SCOPE Application',
+                        'description' => 'Inventory and Warehouse management',
+                        'url' => env('SCOPE_URL', 'http://localhost:5173'),
+                        'icon' => 'box',
+                        'color' => 'purple',
                         'permissions' => $user->isAdmin() ? ['read', 'write'] : ['read'],
                     ],
                 ],
@@ -178,6 +205,7 @@ class DashboardController extends Controller
             'ams' => env('AMS_URL', 'http://localhost:5174/#/'),
             'arrival-dashboard' => env('ARRIVAL_DASHBOARD_URL', 'http://localhost:5174/#/arrival-dashboard'),
             'arrival-check' => env('ARRIVAL_CHECK_URL', 'http://localhost:5174/#/driver'),
+            'scope' => env('SCOPE_URL', 'http://localhost:5173'),
         ];
 
         if (!isset($projectUrls[$projectId])) {
