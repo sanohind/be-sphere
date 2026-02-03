@@ -41,10 +41,17 @@ return [
             'provider' => 'users',
         ],
 
-    'api' => [
+        // ✅ JWT Guard (Current System - for backward compatibility)
+        'api' => [
             'driver' => 'jwt',
             'provider' => 'users',
             'hash' => false,
+        ],
+
+        // ✅ Passport Guard (OIDC - New System)
+        'passport' => [
+            'driver' => 'passport',
+            'provider' => 'users',
         ],
     ],
 

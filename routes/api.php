@@ -2,12 +2,46 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\OIDCController;
 use Illuminate\Support\Facades\Route;
+
+// ✅ Test route
+Route::get('oidc-test', function() {
+    return response()->json(['status' => 'OIDC endpoint working!']);
+});
+
+// ✅ OIDC Discovery Endpoint
+Route::get('.well-known/openid-configuration', [OIDCController::class, 'discovery'])->where('path', '.*');
+
+// ✅ OAuth Endpoints
+Route::group(['prefix' => 'oauth'], function () {
+    Route::get('authorize', [OIDCController::class, 'authorize']);
+    Route::post('token', [OIDCController::class, 'token']);
+    Route::get('userinfo', [OIDCController::class, 'userInfo']);
+    Route::get('jwks', [OIDCController::class, 'jwks']);
+    
+    // 🧪 TEST ONLY - Bypass authentication (Development)
+    Route::get('authorize-test', [\App\Http\Controllers\Api\OIDCTestController::class, 'authorizeTest']);
+});
 
 // Public routes
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('refresh', [AuthController::class, 'refresh']);
+});
+
+// Test route for Cloudflare IP detection
+Route::get('test-ip', function (\Illuminate\Http\Request $request) {
+    return response()->json([
+        'ip' => $request->ip(),
+        'ips' => $request->ips(),
+        'cf_connecting_ip' => $request->header('Cf-Connecting-Ip'),
+        'x_forwarded_for' => $request->header('X-Forwarded-For'),
+        'x_forwarded_proto' => $request->header('X-Forwarded-Proto'),
+        'x_forwarded_host' => $request->header('X-Forwarded-Host'),
+        'x_forwarded_port' => $request->header('X-Forwarded-Port'),
+        'remote_addr' => $request->server('REMOTE_ADDR'),
+    ]);
 });
 
 // Protected routes

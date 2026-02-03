@@ -5,6 +5,12 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
+// DEBUG
+if (isset($_GET['debug'])) {
+    echo "Index.php hit! URI: " . $_SERVER['REQUEST_URI'];
+    exit;
+}
+
 // Determine if the application is in maintenance mode...
 if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
     require $maintenance;

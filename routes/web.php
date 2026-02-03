@@ -7,6 +7,10 @@ Route::get('/', function () {
     return redirect('/login');
 });
 
+Route::get('/web-test', function () {
+    return 'Web route working!';
+});
+
 Route::get('/login', function () {
     return view('login');
 })->name('login');
