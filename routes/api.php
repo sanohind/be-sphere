@@ -19,6 +19,7 @@ Route::group(['prefix' => 'oauth'], function () {
     Route::post('token', [OIDCController::class, 'token']);
     Route::get('userinfo', [OIDCController::class, 'userInfo']);
     Route::get('jwks', [OIDCController::class, 'jwks']);
+    Route::get('verify-token', [OIDCController::class, 'verifyOidcToken']); // For AMS backend compatibility
     
     // 🧪 TEST ONLY - Bypass authentication (Development)
     Route::get('authorize-test', [\App\Http\Controllers\Api\OIDCTestController::class, 'authorizeTest']);

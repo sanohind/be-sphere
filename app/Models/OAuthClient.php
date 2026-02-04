@@ -15,23 +15,23 @@ class OAuthClient extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'user_id',
+        'client_id',
+        'client_secret',
         'name',
-        'secret',
-        'provider',
-        'redirect',
-        'personal_access_client',
-        'password_client',
-        'revoked',
+        'redirect_uris',
+        'scopes',
+        'is_confidential',
+        'is_active',
     ];
 
     /**
      * The attributes that should be cast.
      */
     protected $casts = [
-        'personal_access_client' => 'boolean',
-        'password_client' => 'boolean',
-        'revoked' => 'boolean',
+        'is_confidential' => 'boolean',
+        'is_active' => 'boolean',
+        'redirect_uris' => 'array',
+        'scopes' => 'array',
     ];
 
     /**
@@ -39,14 +39,25 @@ class OAuthClient extends Model
      */
     public function confidential(): bool
     {
-        return !empty($this->secret);
+        return $this->is_confidential && !empty($this->client_secret);
     }
 
     /**
-     * Get the user that owns the client.
+     * Get redirect URI (first one from array or single value)
      */
-    public function user()
+    public function getRedirectAttribute(): string
     {
-        return $this->belongsTo(User::class);
+        if (is_array($this->redirect_uris) && !empty($this->redirect_uris)) {
+            return $this->redirect_uris[0];
+        }
+        return is_string($this->redirect_uris) ? $this->redirect_uris : '';
+    }
+
+    /**
+     * Get secret (alias for client_secret for backward compatibility)
+     */
+    public function getSecretAttribute(): ?string
+    {
+        return $this->client_secret;
     }
 }

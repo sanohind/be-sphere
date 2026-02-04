@@ -108,7 +108,65 @@ class OIDCController extends Controller
             $authRequest->setAuthorizationApproved(true);
 
             // Generate response
-            return $this->server->completeAuthorizationRequest($authRequest, new \Nyholm\Psr7\Response());
+            $response = $this->server->completeAuthorizationRequest($authRequest, new \Nyholm\Psr7\Response());
+            
+            // Fix redirect URI for hash routing (#)
+            // OAuth2 server puts query params after redirect_uri, but with hash routing,
+            // query params after # are not sent to server by browser
+            // Solution: Extract query params from fragment and move them before hash
+            $location = $response->getHeaderLine('Location');
+            
+            // Log original location for debugging
+            \Log::info('OIDC Authorization Redirect', [
+                'original_location' => $location,
+                'has_hash' => strpos($location, '#') !== false,
+            ]);
+            
+            if ($location && strpos($location, '#') !== false) {
+                // Parse the redirect URL
+                $parts = parse_url($location);
+                
+                // Extract components
+                $scheme = $parts['scheme'] ?? 'http';
+                $host = $parts['host'] ?? '';
+                $port = isset($parts['port']) ? ':' . $parts['port'] : '';
+                $path = $parts['path'] ?? '/';
+                
+                // Handle fragment - it may contain query params
+                $fragment = isset($parts['fragment']) ? $parts['fragment'] : '';
+                $queryFromFragment = '';
+                $fragmentPath = $fragment;
+                
+                // Check if fragment contains query params (e.g., "/callback?code=xxx&state=yyy")
+                if (strpos($fragment, '?') !== false) {
+                    list($fragmentPath, $queryFromFragment) = explode('?', $fragment, 2);
+                    $queryFromFragment = '?' . $queryFromFragment;
+                }
+                
+                // Also check for query in main URL (if OAuth2 server puts it there)
+                $query = isset($parts['query']) ? '?' . $parts['query'] : '';
+                
+                // Use query from fragment if main query is empty
+                if (empty($query) && !empty($queryFromFragment)) {
+                    $query = $queryFromFragment;
+                }
+                
+                // Rebuild URL: base + query + fragment (path only)
+                // This puts query params BEFORE hash so browser can read them
+                $fixedLocation = $scheme . '://' . $host . $port . $path . $query . '#' . $fragmentPath;
+                
+                // Log fixed location for debugging
+                \Log::info('OIDC Authorization Redirect Fixed', [
+                    'fixed_location' => $fixedLocation,
+                    'query_params' => $query,
+                    'fragment_path' => $fragmentPath,
+                ]);
+                
+                // Update response with fixed location
+                return $response->withHeader('Location', $fixedLocation);
+            }
+            
+            return $response;
 
         } catch (OAuthServerException $exception) {
             return $exception->generateHttpResponse(new \Nyholm\Psr7\Response());
@@ -192,6 +250,77 @@ class OIDCController extends Controller
             return $exception->generateHttpResponse(new \Nyholm\Psr7\Response());
         } catch (\Exception $exception) {
             return response()->json(['error' => $exception->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Verify OIDC Token Endpoint
+     * Compatible with /api/auth/verify-token format for AMS backend
+     */
+    public function verifyOidcToken(Request $request): JsonResponse
+    {
+        $psr17Factory = new Psr17Factory();
+        $psrHttpFactory = new PsrHttpFactory($psr17Factory, $psr17Factory, $psr17Factory, $psr17Factory);
+        $psrRequest = $psrHttpFactory->createRequest($request);
+
+        try {
+            // Validate the Bearer token
+            $psrRequest = $this->resourceServer->validateAuthenticatedRequest($psrRequest);
+            $userId = $psrRequest->getAttribute('oauth_user_id');
+
+            $user = \App\Models\User::find($userId);
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found'
+                ], 404);
+            }
+
+            // Load relationships
+            $user->load(['role', 'department']);
+
+            // Return in same format as /api/auth/verify-token for compatibility
+            return response()->json([
+                'success' => true,
+                'message' => 'Token is valid',
+                'data' => [
+                    'valid' => true,
+                    'user' => [
+                        'id' => $user->id,
+                        'email' => $user->email,
+                        'username' => $user->username,
+                        'name' => $user->name,
+                        'nik' => $user->nik,
+                        'phone_number' => $user->phone_number,
+                        'avatar' => $user->avatar,
+                        'role' => [
+                            'id' => $user->role->id,
+                            'name' => $user->role->name,
+                            'slug' => $user->role->slug,
+                            'level' => $user->role->level,
+                        ],
+                        'department' => $user->department ? [
+                            'id' => $user->department->id,
+                            'name' => $user->department->name,
+                            'code' => $user->department->code,
+                        ] : null,
+                        'is_active' => $user->is_active,
+                        'last_login_at' => $user->last_login_at,
+                    ],
+                ],
+            ]);
+
+        } catch (OAuthServerException $exception) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token is Invalid'
+            ], 401);
+        } catch (\Exception $exception) {
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage()
+            ], 500);
         }
     }
 

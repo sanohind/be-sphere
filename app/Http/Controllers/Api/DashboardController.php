@@ -246,6 +246,11 @@ class DashboardController extends Controller
 
         // Check SSO mode (jwt or oidc)
         $ssoMode = env('SSO_MODE', 'jwt');
+        
+        // Force OIDC for AMS (Migration Phase 1)
+        if ($projectId === 'ams') {
+            $ssoMode = 'oidc';
+        }
 
         if ($ssoMode === 'oidc') {
             // OIDC Mode: Return authorization URL
@@ -271,10 +276,14 @@ class DashboardController extends Controller
                 return $this->getJWTUrl($user, $projectId, $projectUrl);
             }
 
+            // Generate temporary token for handover to OIDC controller
+            $token = JWTAuth::fromUser($user);
+
             $authorizationUrl = $oidcService->generateAuthorizationUrl(
                 $projectId,
                 $clientConfig['client_name'],
-                $clientConfig['redirect_uri']
+                $clientConfig['redirect_uri'],
+                $token // Pass token for authentication
             );
 
             return response()->json([

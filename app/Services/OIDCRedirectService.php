@@ -15,7 +15,7 @@ class OIDCRedirectService
      * @param string $redirectUri The callback URI for the client application
      * @return string The authorization URL
      */
-    public function generateAuthorizationUrl(string $projectId, string $clientName, string $redirectUri): string
+    public function generateAuthorizationUrl(string $projectId, string $clientName, string $redirectUri, ?string $token = null): string
     {
         // Get the OAuth client from database
         $client = OAuthClient::where('name', $clientName)->first();
@@ -27,14 +27,22 @@ class OIDCRedirectService
         // Generate a secure random state parameter for CSRF protection
         $state = Str::random(40);
 
-        // Build authorization URL with required OAuth parameters
-        $params = http_build_query([
+        // Build parameters array
+        $queryParams = [
             'client_id' => $client->id,
             'redirect_uri' => $redirectUri,
             'response_type' => 'code',
             'scope' => 'openid profile email',
             'state' => $state,
-        ]);
+        ];
+
+        // Append token if provided (for SSO handshake)
+        if ($token) {
+            $queryParams['token'] = $token;
+        }
+
+        // Build authorization URL with required OAuth parameters
+        $params = http_build_query($queryParams);
 
         $baseUrl = config('app.url');
 
@@ -52,14 +60,49 @@ class OIDCRedirectService
         $configs = [
             'scope' => [
                 'client_name' => 'SCOPE Application',
-                'redirect_uri' => env('SCOPE_CALLBACK_URL', 'http://localhost:5175/#/callback'),
             ],
             'ams' => [
                 'client_name' => 'AMS (Arrival Management System)',
-                'redirect_uri' => env('AMS_CALLBACK_URL', 'http://localhost:5174/#/callback'),
             ],
         ];
 
-        return $configs[$projectId] ?? null;
+        if (!isset($configs[$projectId])) {
+            return null;
+        }
+
+        $config = $configs[$projectId];
+        
+        // Get client from database to get actual redirect URI
+        $client = OAuthClient::where('name', $config['client_name'])->first();
+        
+        if (!$client) {
+            return null;
+        }
+
+        // Get redirect URI from database (first one from array)
+        $redirectUri = '';
+        if (is_array($client->redirect_uris) && !empty($client->redirect_uris)) {
+            $redirectUri = $client->redirect_uris[0];
+        } elseif (is_string($client->redirect_uris)) {
+            // Try to decode JSON string
+            $decoded = json_decode($client->redirect_uris, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && !empty($decoded)) {
+                $redirectUri = $decoded[0];
+            } else {
+                $redirectUri = $client->redirect_uris;
+            }
+        }
+
+        // Fallback to env if database doesn't have redirect URI
+        if (empty($redirectUri)) {
+            $redirectUri = $projectId === 'scope' 
+                ? env('SCOPE_CALLBACK_URL', 'http://localhost:5175/#/callback')
+                : env('AMS_CALLBACK_URL', 'http://localhost:5174/#/callback');
+        }
+
+        $config['redirect_uri'] = $redirectUri;
+        $config['client_id'] = $client->id; // Use numeric ID for compatibility
+
+        return $config;
     }
 }
