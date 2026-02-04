@@ -12,14 +12,27 @@ return new class extends Migration {
     {
         Schema::create('oauth_clients', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id')->nullable()->index();
+            // Human-friendly identifier used by clients (optional; some flows may still use numeric `id`)
+            $table->string('client_id')->unique();
+
+            // Secret for confidential clients (nullable for public SPA clients)
+            $table->string('client_secret', 255)->nullable();
+
             $table->string('name');
-            $table->string('secret', 100)->nullable();
-            $table->string('provider')->nullable();
-            $table->text('redirect');
-            $table->boolean('personal_access_client')->default(false);
-            $table->boolean('password_client')->default(false);
-            $table->boolean('revoked')->default(false);
+
+            // JSON array string of allowed redirect URIs (we store as text for compatibility)
+            // Example: ["https://ams.company.com/#/callback"]
+            $table->text('redirect_uris');
+
+            // Optional JSON array string scopes configuration
+            $table->text('scopes')->nullable();
+
+            // Whether this client must authenticate at /oauth/token (requires client_secret)
+            $table->boolean('is_confidential')->default(false);
+
+            // Soft "enabled/disabled" flag for clients
+            $table->boolean('is_active')->default(true);
+
             $table->timestamps();
         });
     }
