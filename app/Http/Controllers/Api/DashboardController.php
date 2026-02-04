@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Services\OIDCRedirectService;
 
 class DashboardController extends Controller
 {
@@ -194,7 +195,7 @@ class DashboardController extends Controller
     {
         $user = JWTAuth::user();
         $user->load(['role', 'department']);
-        
+
         // Check if user has access to this project
         $availableProjects = $this->getAvailableProjects($user);
         $hasAccess = collect($availableProjects)->contains('id', $projectId);
@@ -243,6 +244,60 @@ class DashboardController extends Controller
             ]);
         }
 
+        // Check SSO mode (jwt or oidc)
+        $ssoMode = env('SSO_MODE', 'jwt');
+
+        if ($ssoMode === 'oidc') {
+            // OIDC Mode: Return authorization URL
+            return $this->getOIDCUrl($user, $projectId, $projectUrl);
+        } else {
+            // JWT Mode (Legacy): Return callback URL with JWT token
+            return $this->getJWTUrl($user, $projectId, $projectUrl);
+        }
+
+    }
+
+    /**
+     * Get OIDC authorization URL (new flow)
+     */
+    private function getOIDCUrl($user, string $projectId, string $projectUrl): JsonResponse
+    {
+        try {
+            $oidcService = new OIDCRedirectService();
+            $clientConfig = $oidcService->getClientConfig($projectId);
+
+            if (!$clientConfig) {
+                // Project not configured for OIDC, fallback to JWT mode
+                return $this->getJWTUrl($user, $projectId, $projectUrl);
+            }
+
+            $authorizationUrl = $oidcService->generateAuthorizationUrl(
+                $projectId,
+                $clientConfig['client_name'],
+                $clientConfig['redirect_uri']
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'url' => $authorizationUrl,
+                    'project_id' => $projectId,
+                    'mode' => 'oidc',
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate OIDC URL: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get JWT callback URL (legacy flow)
+     */
+    private function getJWTUrl($user, string $projectId, string $projectUrl): JsonResponse
+    {
         // For authenticated projects, append token
         $token = JWTAuth::fromUser($user);
 
@@ -260,6 +315,7 @@ class DashboardController extends Controller
             'data' => [
                 'url' => $urlWithToken,
                 'project_id' => $projectId,
+                'mode' => 'jwt',
             ],
         ]);
     }

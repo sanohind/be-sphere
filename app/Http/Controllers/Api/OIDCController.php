@@ -31,7 +31,7 @@ class OIDCController extends Controller
     public function discovery(): JsonResponse
     {
         $baseUrl = config('app.url');
-        
+
         return response()->json([
             'issuer' => $baseUrl,
             'authorization_endpoint' => $baseUrl . '/api/oauth/authorize',
@@ -78,11 +78,11 @@ class OIDCController extends Controller
 
             // Sphere Frontend Login URL (Configure in .env)
             $feLoginUrl = env('FE_SPHERE_LOGIN_URL', 'http://localhost:5173/#/signin');
-            
+
             // Build Redirect URL
             // The FE should login, then redirect back to 'redirect' param with '?token=JWT' appended
             $redirectUrl = $feLoginUrl . '?redirect=' . urlencode($returnUrl);
-            
+
             // Return JSON if expecting JSON (optional), but Authorize endpoint is Browser flow usually.
             // But since this is API Controller, we can return 401 JSON with location? 
             // Standard OAuth2 says "User Authentication is handled by Authorization Server". 
@@ -114,7 +114,7 @@ class OIDCController extends Controller
             return $exception->generateHttpResponse(new \Nyholm\Psr7\Response());
         } catch (\Exception $exception) {
             return response()->json([
-                'error' => 'unknown_error', 
+                'error' => 'unknown_error',
                 'message' => $exception->getMessage()
             ], 500);
         }
@@ -134,8 +134,8 @@ class OIDCController extends Controller
         } catch (OAuthServerException $exception) {
             return $exception->generateHttpResponse(new \Nyholm\Psr7\Response());
         } catch (\Exception $exception) {
-             return response()->json([
-                'error' => 'unknown_error', 
+            return response()->json([
+                'error' => 'unknown_error',
                 'message' => $exception->getMessage()
             ], 500);
         }
@@ -154,16 +154,16 @@ class OIDCController extends Controller
             // Validate the Bearer token
             $psrRequest = $this->resourceServer->validateAuthenticatedRequest($psrRequest);
             $userId = $psrRequest->getAttribute('oauth_user_id');
-            
+
             $user = \App\Models\User::find($userId);
-            
+
             if (!$user) {
                 return response()->json(['error' => 'User not found'], 404);
             }
 
             // Load relationships if they exist
             // $user->load(['role', 'department']);
-            
+
             return response()->json([
                 // Standard OIDC claims
                 'sub' => (string) $user->id,
@@ -173,7 +173,7 @@ class OIDCController extends Controller
                 'preferred_username' => $user->username ?? $user->email,
                 // 'picture' => $user->avatar ?? null,
                 'updated_at' => $user->updated_at->timestamp,
-                
+
                 // Custom claims (add check if relation exists)
                 'role' => $user->role ? [
                     'id' => $user->role->id,
@@ -181,7 +181,7 @@ class OIDCController extends Controller
                     'slug' => $user->role->slug,
                     'level' => $user->role->level,
                 ] : null,
-                
+
                 // Additional user info
                 'nik' => $user->nik,
                 'phone_number' => $user->phone_number,
@@ -196,14 +196,59 @@ class OIDCController extends Controller
     }
 
     /**
-     * JWKS Endpoint (TODO: Implement PEM to JWK conversion)
+     * JWKS Endpoint - JSON Web Key Set
+     * Returns public keys in JWK format for clients to verify token signatures
      */
     public function jwks()
     {
-        // Requires RSA Key parsing to extract modulus (n) and exponent (e)
-        // For now, return empty keys set
-        return response()->json([
-            'keys' => []
-        ]);
+        try {
+            $publicKeyPath = storage_path('oauth/public.key');
+
+            if (!file_exists($publicKeyPath)) {
+                return response()->json([
+                    'error' => 'Public key not found'
+                ], 500);
+            }
+
+            $publicKeyContent = file_get_contents($publicKeyPath);
+
+            // Parse the PEM public key
+            $publicKey = openssl_pkey_get_details(
+                openssl_pkey_get_public($publicKeyContent)
+            );
+
+            if (!$publicKey || !isset($publicKey['rsa'])) {
+                return response()->json([
+                    'error' => 'Invalid RSA public key'
+                ], 500);
+            }
+
+            // Extract RSA components
+            $n = $publicKey['rsa']['n']; // Modulus
+            $e = $publicKey['rsa']['e']; // Exponent
+
+            // Convert to base64url encoding (JWK standard)
+            $nBase64 = rtrim(strtr(base64_encode($n), '+/', '-_'), '=');
+            $eBase64 = rtrim(strtr(base64_encode($e), '+/', '-_'), '=');
+
+            // Build JWK
+            $jwk = [
+                'kty' => 'RSA',
+                'use' => 'sig',
+                'alg' => 'RS256',
+                'n' => $nBase64,
+                'e' => $eBase64,
+            ];
+
+            return response()->json([
+                'keys' => [$jwk]
+            ]);
+
+        } catch (\Exception $exception) {
+            return response()->json([
+                'error' => 'Failed to generate JWKS',
+                'message' => config('app.debug') ? $exception->getMessage() : 'Internal server error'
+            ], 500);
+        }
     }
 }

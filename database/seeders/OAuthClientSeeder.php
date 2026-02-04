@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Laravel\Passport\Client;
+use App\Models\OAuthClient;
 use Illuminate\Support\Str;
 
 class OAuthClientSeeder extends Seeder
@@ -37,25 +37,25 @@ class OAuthClientSeeder extends Seeder
 
         foreach ($clients as $index => $clientData) {
             // Check if client already exists
-            $existingClient = Client::where('name', $clientData['name'])->first();
-            
+            $existingClient = OAuthClient::where('name', $clientData['name'])->first();
+
             if ($existingClient) {
                 $this->command->info("Client '{$clientData['name']}' already exists. Skipping...");
                 continue;
             }
-            
+
             // Create client
-            $client = Client::create(array_merge($clientData, [
+            $client = OAuthClient::create(array_merge($clientData, [
                 'secret' => Str::random(40),
                 'user_id' => null, // First-party client
             ]));
-            
+
             $this->command->info("Created OAuth Client: {$client->name}");
             $this->command->info("  Client ID: {$client->id}");
             $this->command->info("  Client Secret: {$client->secret}");
             $this->command->info("  Redirect URI: {$client->redirect}");
             $this->command->line('');
-            
+
             // Save to .env file (for reference)
             $envKey = strtoupper(str_replace([' ', '(', ')'], ['_', '', ''], $client->name));
             $this->command->warn("Add these to your .env file:");
@@ -63,7 +63,7 @@ class OAuthClientSeeder extends Seeder
             $this->command->line("{$envKey}_CLIENT_SECRET={$client->secret}");
             $this->command->line('');
         }
-        
+
         $this->command->info('OAuth clients seeded successfully!');
         $this->command->warn('IMPORTANT: Save the client secrets above. They will not be shown again!');
     }
