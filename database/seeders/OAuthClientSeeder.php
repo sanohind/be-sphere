@@ -19,48 +19,53 @@ class OAuthClientSeeder extends Seeder
         $clients = [
             [
                 'name' => 'SCOPE Application',
-                'redirect' => env('SCOPE_CALLBACK_URL', 'http://localhost:5175/#/callback'),
-                'personal_access_client' => false,
-                'password_client' => false,
-                'revoked' => false,
-                'provider' => null,
+                'client_id' => 'scope-client',
+                'redirect_uris' => [env('SCOPE_CALLBACK_URL', 'http://localhost:5175/#/callback')],
+                'scopes' => ['openid', 'profile', 'email'],
+                'is_confidential' => true,
+                'is_active' => true,
             ],
             [
                 'name' => 'AMS (Arrival Management System)',
-                'redirect' => env('AMS_CALLBACK_URL', 'http://localhost:5174/#/callback'),
-                'personal_access_client' => false,
-                'password_client' => false,
-                'revoked' => false,
-                'provider' => null,
+                'client_id' => 'ams-client',
+                'redirect_uris' => [env('AMS_CALLBACK_URL', 'http://localhost:5174/#/callback')],
+                'scopes' => ['openid', 'profile', 'email'],
+                'is_confidential' => true,
+                'is_active' => true,
             ],
         ];
 
-        foreach ($clients as $index => $clientData) {
-            // Check if client already exists
-            $existingClient = OAuthClient::where('name', $clientData['name'])->first();
+        foreach ($clients as $clientData) {
+            // Check if client already exists by name or client_id
+            $existingClient = OAuthClient::where('name', $clientData['name'])
+                ->orWhere('client_id', $clientData['client_id'])
+                ->first();
 
             if ($existingClient) {
                 $this->command->info("Client '{$clientData['name']}' already exists. Skipping...");
                 continue;
             }
 
-            // Create client
+            // Generate a secure random secret for confidential clients
+            $clientSecret = Str::random(80);
+
+            // Create client with new schema
             $client = OAuthClient::create(array_merge($clientData, [
-                'secret' => Str::random(40),
-                'user_id' => null, // First-party client
+                'client_secret' => $clientSecret,
             ]));
 
             $this->command->info("Created OAuth Client: {$client->name}");
-            $this->command->info("  Client ID: {$client->id}");
-            $this->command->info("  Client Secret: {$client->secret}");
-            $this->command->info("  Redirect URI: {$client->redirect}");
+            $this->command->info("  Client ID: {$client->client_id} (Database ID: {$client->id})");
+            $this->command->info("  Client Secret: {$client->client_secret}");
+            $this->command->info("  Redirect URIs: " . implode(', ', (array) $client->redirect_uris));
+            $this->command->info("  Is Confidential: " . ($client->is_confidential ? 'Yes' : 'No'));
             $this->command->line('');
 
             // Save to .env file (for reference)
             $envKey = strtoupper(str_replace([' ', '(', ')'], ['_', '', ''], $client->name));
             $this->command->warn("Add these to your .env file:");
-            $this->command->line("{$envKey}_CLIENT_ID={$client->id}");
-            $this->command->line("{$envKey}_CLIENT_SECRET={$client->secret}");
+            $this->command->line("VITE_OIDC_CLIENT_ID={$client->id}  # or use client_id: {$client->client_id}");
+            $this->command->line("VITE_OIDC_CLIENT_SECRET={$client->client_secret}");
             $this->command->line('');
         }
 
