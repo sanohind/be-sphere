@@ -98,7 +98,7 @@ class DashboardController extends Controller
                 ],
                 [
                     'id' => 'scope',
-                    'name' => 'SCOPE Application',
+                    'name' => 'Sanoh Central Operation and Production Evaluation',
                     'description' => 'Inventory and Warehouse management',
                     // 'url' => env('SCOPE_URL', 'https://scope.sanohindonesia.co.id'),
                     'url' => env('SCOPE_URL', 'http://localhost:5175/#/'),
@@ -147,7 +147,7 @@ class DashboardController extends Controller
                     ],
                     [
                         'id' => 'scope',
-                        'name' => 'SCOPE Application',
+                        'name' => 'Sanoh Central Operation and Production Evaluation',
                         'description' => 'Inventory and Warehouse management',
                         // 'url' => env('SCOPE_URL', 'https://scope.sanohindonesia.co.id'),
                         'url' => env('SCOPE_URL', 'http://localhost:5175/#/'),
@@ -168,7 +168,7 @@ class DashboardController extends Controller
                     ],
                     [
                         'id' => 'scope',
-                        'name' => 'SCOPE Application',
+                        'name' => 'Sanoh Central Operation and Production Evaluation',
                         'description' => 'Inventory and Warehouse management',
                         // 'url' => env('SCOPE_URL', 'https://scope.sanohindonesia.co.id'),
                         'url' => env('SCOPE_URL', 'http://localhost:5175/#/'),
