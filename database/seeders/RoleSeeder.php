@@ -18,6 +18,12 @@ class RoleSeeder extends Seeder
             
             // Level 3: Operator
             ['name' => 'Operator', 'slug' => 'operator', 'level' => 3],
+
+            // Level 4: Presdir/GM
+            ['name' => 'Presdir/GM', 'slug' => 'presdir-gm', 'level' => 4],
+
+            // Level 5: Manager
+            ['name' => 'Manager', 'slug' => 'manager', 'level' => 5],
         ];
 
         foreach ($roles as $role) {

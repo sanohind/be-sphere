@@ -98,12 +98,20 @@ class DashboardController extends Controller
                 ],
                 [
                     'id' => 'scope',
-                    'name' => 'Sanoh Central Operation and Production Evaluation',
+                    'name' => 'SCOPE (Dashboard)',
                     'description' => 'Inventory and Warehouse management',
-                    // 'url' => env('SCOPE_URL', 'https://scope.sanohindonesia.co.id'),
                     'url' => env('SCOPE_URL', 'http://localhost:5175/#/'),
                     'icon' => 'meeting',
                     'color' => 'purple',
+                    'permissions' => ['read', 'write', 'admin'],
+                ],
+                [
+                    'id' => 'cch',
+                    'name' => 'CCH',
+                    'description' => 'Customer Complaint Handling System',
+                    'url' => env('CCH_URL', 'http://localhost:5176'),
+                    'icon' => 'qc',
+                    'color' => 'orange',
                     'permissions' => ['read', 'write', 'admin'],
                 ],
             ];
@@ -147,13 +155,22 @@ class DashboardController extends Controller
                     ],
                     [
                         'id' => 'scope',
-                        'name' => 'Sanoh Central Operation and Production Evaluation',
+                        'name' => 'SCOPE (Dashboard)',
                         'description' => 'Inventory and Warehouse management',
                         // 'url' => env('SCOPE_URL', 'https://scope.sanohindonesia.co.id'),
                         'url' => env('SCOPE_URL', 'http://localhost:5175/#/'),
                         'icon' => 'meeting',
                         'color' => 'purple',
                         'permissions' => $user->isAdmin() ? ['read', 'write'] : ['read'],
+                    ],
+                    [
+                        'id' => 'cch',
+                        'name' => 'CCH',
+                        'description' => 'Customer Complaint Handling System',
+                        'url' => env('CCH_URL', 'http://localhost:5176'),
+                        'icon' => 'qc',
+                        'color' => 'orange',
+                        'permissions' => ['read', 'write', 'admin'],
                     ],
                 ],
                 'LOG' => [ // Logistics department
@@ -168,13 +185,76 @@ class DashboardController extends Controller
                     ],
                     [
                         'id' => 'scope',
-                        'name' => 'Sanoh Central Operation and Production Evaluation',
+                        'name' => 'SCOPE (Dashboard)',
                         'description' => 'Inventory and Warehouse management',
                         // 'url' => env('SCOPE_URL', 'https://scope.sanohindonesia.co.id'),
                         'url' => env('SCOPE_URL', 'http://localhost:5175/#/'),
                         'icon' => 'meeting',
                         'color' => 'purple',
                         'permissions' => $user->isAdmin() ? ['read', 'write'] : ['read'],
+                    ],
+                    [
+                        'id' => 'cch',
+                        'name' => 'CCH',
+                        'description' => 'Customer Complaint Handling System',
+                        'url' => env('CCH_URL', 'http://localhost:5176'),
+                        'icon' => 'qc',
+                        'color' => 'orange',
+                        'permissions' => ['read', 'write', 'admin'],
+                    ],
+                ],
+                'PC' => [
+                    [
+                        'id' => 'cch',
+                        'name' => 'CCH',
+                        'description' => 'Customer Complaint Handling System',
+                        'url' => env('CCH_URL', 'http://localhost:5176'),
+                        'icon' => 'qc',
+                        'color' => 'orange',
+                        'permissions' => ['read', 'write', 'admin'],
+                    ],
+                        [
+                        'id' => 'ams',
+                        'name' => 'Arrival Management System',
+                        'description' => 'Arrival management system for incoming goods',
+                        // 'url' => env('AMS_URL', 'http://ams.ns1.sanoh.co.id/#/'),
+                        'url' => env('AMS_URL', 'http://localhost:5174/#/'),
+                        'icon' => 'truck',
+                        'color' => 'red',
+                        'permissions' => ['read', 'write', 'admin'],
+                    ],
+                ],
+                'TOP' => [
+                    [
+                        'id' => 'cch',
+                        'name' => 'CCH',
+                        'description' => 'Customer Complaint Handling System',
+                        'url' => env('CCH_URL', 'http://localhost:5176'),
+                        'icon' => 'qc',
+                        'color' => 'orange',
+                        'permissions' => ['read', 'write', 'admin'],
+                    ],
+                ],
+                'FIN' => [
+                    [
+                        'id' => 'cch',
+                        'name' => 'CCH',
+                        'description' => 'Customer Complaint Handling System',
+                        'url' => env('CCH_URL', 'http://localhost:5176'),
+                        'icon' => 'qc',
+                        'color' => 'orange',
+                        'permissions' => ['read', 'write', 'admin'],
+                    ],
+                ],
+                'QC' => [
+                    [
+                        'id' => 'cch',
+                        'name' => 'CCH',
+                        'description' => 'Customer Complaint Handling System',
+                        'url' => env('CCH_URL', 'http://localhost:5176'),
+                        'icon' => 'qc',
+                        'color' => 'orange',
+                        'permissions' => ['read', 'write', 'admin'],
                     ],
                 ],
             ];
@@ -212,16 +292,12 @@ class DashboardController extends Controller
 
         // Define project URLs
         $projectUrls = [
-            // 'fg-store' => env('FG_STORE_URL', 'http://fg-store.ns1.sanoh.co.id'),
             'fg-store' => env('FG_STORE_URL', 'http://127.0.0.1:8001'),
-            // 'ams' => env('AMS_URL', 'http://ams.ns1.sanoh.co.id/#/'),
             'ams' => env('AMS_URL', 'http://localhost:5174/#/'),
-            // 'arrival-dashboard' => env('ARRIVAL_DASHBOARD_URL', 'http://ams.n1.sanoh.co.id/#/arrival-dashboard'),
             'arrival-dashboard' => env('ARRIVAL_DASHBOARD_URL', 'http://localhost:5174/#/arrival-dashboard'),
-            // 'arrival-check' => env('ARRIVAL_CHECK_URL', 'http://ams.ns1.sanoh.co.id/#/driver'),
             'arrival-check' => env('ARRIVAL_CHECK_URL', 'http://localhost:5174/#/driver'),
-            // 'scope' => env('SCOPE_URL', 'https://scope.sanohindonesia.co.id'),
             'scope' => env('SCOPE_URL', 'http://localhost:5175/#/'),
+            'cch' => env('CCH_URL', 'http://localhost:5176'),
         ];
 
         if (!isset($projectUrls[$projectId])) {

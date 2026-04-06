@@ -33,6 +33,14 @@ class OAuthClientSeeder extends Seeder
                 'is_confidential' => true,
                 'is_active' => true,
             ],
+            [
+                'name' => 'CCH Application',
+                'client_id' => 'cch-client',
+                'redirect_uris' => [env('CCH_CALLBACK_URL', 'http://localhost:5176/sso/callback')],
+                'scopes' => ['openid', 'profile', 'email'],
+                'is_confidential' => true,
+                'is_active' => true,
+            ],
         ];
 
         foreach ($clients as $clientData) {
