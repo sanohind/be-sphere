@@ -64,6 +64,9 @@ class OIDCRedirectService
             'ams' => [
                 'client_name' => 'AMS (Arrival Management System)',
             ],
+            'cch' => [
+                'client_name' => 'CCH Application',
+            ],
         ];
 
         if (!isset($configs[$projectId])) {
@@ -95,9 +98,13 @@ class OIDCRedirectService
 
         // Fallback to env if database doesn't have redirect URI
         if (empty($redirectUri)) {
-            $redirectUri = $projectId === 'scope' 
-                ? env('SCOPE_CALLBACK_URL', 'http://localhost:5175/#/callback')
-                : env('AMS_CALLBACK_URL', 'http://localhost:5174/#/callback');
+            if ($projectId === 'scope') {
+                $redirectUri = env('SCOPE_CALLBACK_URL', 'http://localhost:5175/#/callback');
+            } elseif ($projectId === 'ams') {
+                $redirectUri = env('AMS_CALLBACK_URL', 'http://localhost:5174/#/callback');
+            } else {
+                $redirectUri = env('CCH_CALLBACK_URL', 'http://localhost:5176/#/sso/callback');
+            }
         }
 
         $config['redirect_uri'] = $redirectUri;
