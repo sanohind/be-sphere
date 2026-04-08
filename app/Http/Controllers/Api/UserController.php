@@ -133,6 +133,8 @@ class UserController extends Controller
             'name' => 'sometimes|string|max:100',
             'nik' => 'nullable|string|unique:users,nik,' . $user->id . '|max:20',
             'phone_number' => 'nullable|string|max:20',
+            'role_id' => 'sometimes|exists:roles,id',
+            'department_id' => 'nullable|exists:departments,id',
             'is_active' => 'sometimes|boolean',
         ]);
 
