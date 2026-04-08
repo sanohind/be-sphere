@@ -76,16 +76,16 @@ class OAuthServiceProvider extends ServiceProvider
             
             $server->enableGrantType(
                 $grant,
-                new DateInterval('PT1H') // Access token TTL
+                new DateInterval('P30D') // Access token TTL (Ubah ke 30 hari agar user awet loginnya)
             );
 
             // Enable Refresh Token Grant
             $grant = new \League\OAuth2\Server\Grant\RefreshTokenGrant($refreshTokenRepository);
-            $grant->setRefreshTokenTTL(new DateInterval('P1M'));
+            $grant->setRefreshTokenTTL(new DateInterval('P6M'));
             
             $server->enableGrantType(
                 $grant,
-                new DateInterval('PT1H')
+                new DateInterval('P30D')
             );
             
             return $server;
