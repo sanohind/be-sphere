@@ -259,6 +259,7 @@ class DashboardController extends Controller
                     ],
                 ],
             ];
+            //TESTING
 
             // Get projects based on department code
             if ($departmentCode && isset($departmentProjects[$departmentCode])) {
