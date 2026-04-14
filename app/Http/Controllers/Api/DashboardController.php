@@ -391,7 +391,10 @@ class DashboardController extends Controller
         // Normalize base URL (remove trailing slash)
         $urlParts = explode('#', $projectUrl);
         $baseUrl = rtrim($urlParts[0], '/');
-        $usesHashRouting = str_contains($projectUrl, '#');
+        
+        // Define which apps strictly use HashRouting
+        $hashRoutingApps = ['scope', 'ams', 'cch'];
+        $usesHashRouting = str_contains($projectUrl, '#') || in_array($projectId, $hashRoutingApps);
 
         // Build callback path based on routing mode
         $callbackPath = $usesHashRouting ? '/#/sso/callback' : '/sso/callback';
