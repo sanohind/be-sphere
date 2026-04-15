@@ -15,7 +15,7 @@ Route::get('.well-known/openid-configuration', [OIDCController::class, 'discover
 
 // ✅ OAuth Endpoints
 Route::group(['prefix' => 'oauth'], function () {
-    Route::get('authorize', [OIDCController::class, 'authorize']);
+    Route::get('authorize', [OIDCController::class, 'authorizeClient']);
     Route::post('token', [OIDCController::class, 'token']);
     Route::get('userinfo', [OIDCController::class, 'userInfo']);
     Route::get('jwks', [OIDCController::class, 'jwks']);
