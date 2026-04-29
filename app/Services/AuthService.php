@@ -192,7 +192,7 @@ class AuthService
             'name' => $user->name,
             'nik' => $user->nik,
             'phone_number' => $user->phone_number,
-            'avatar' => $user->avatar,
+            'avatar' => $user->avatar ? asset('storage/' . $user->avatar) : null,
             'role' => [
                 'id' => $user->role->id,
                 'name' => $user->role->name,

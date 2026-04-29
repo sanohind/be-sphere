@@ -3,9 +3,12 @@
 namespace App\Services;
 
 use App\Enums\AuditAction;
+use App\Mail\WelcomeNewUserMail;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class UserService
 {
@@ -18,17 +21,25 @@ class UserService
             throw new \Exception('You do not have permission to create user with this role', 403);
         }
 
-        // For admin, set department_id same as creator
-        if ($creator->isAdmin()) {
-            $data['department_id'] = $creator->department_id;
-        }
-
         // Hash password
         $data['password'] = Hash::make($data['password']);
         $data['created_by'] = $creator->id;
 
+        // Generate password setup token (valid 24 hours)
+        $token = Str::random(64);
+        $data['password_reset_token'] = $token;
+        $data['password_reset_expires_at'] = now()->addHours(24);
+
         // Create user
         $user = User::create($data);
+
+        // Send welcome email with set-password link
+        try {
+            Mail::to($user->email)->send(new WelcomeNewUserMail($user, $token));
+        } catch (\Exception $e) {
+            // Log email failure but don't block user creation
+            \Log::error('Failed to send welcome email to ' . $user->email . ': ' . $e->getMessage());
+        }
 
         // Log audit
         AuditLogService::log(
@@ -44,24 +55,13 @@ class UserService
 
     public function updateUser(User $user, array $data, User $updater): User
     {
-        // Check if updater has permission to update this user
-        if ($updater->isAdmin()) {
-            // Admin can only update users in their department
-            if (!$updater->department_id || $user->department_id !== $updater->department_id) {
-                throw new \Exception('You do not have permission to update this user', 403);
-            }
-            
-            // Admin cannot change department_id or role_id
-            unset($data['department_id']);
-            unset($data['role_id']);
-        } elseif (!$updater->isSuperadmin()) {
-            // Only superadmin and admin can update users
+        // Hanya Superadmin yang dapat mengupdate user
+        if (!$updater->isSuperadmin()) {
             throw new \Exception('You do not have permission to update users', 403);
         }
 
         $oldValues = $user->only(['email', 'username', 'name', 'role_id', 'department_id', 'is_active']);
 
-        // Update password if provided
         if (isset($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         }
@@ -83,23 +83,15 @@ class UserService
 
     public function deleteUser(User $user, User $deleter): bool
     {
-        // Check if deleter has permission to delete this user
-        if ($deleter->isAdmin()) {
-            // Admin can only delete users in their department
-            if (!$deleter->department_id || $user->department_id !== $deleter->department_id) {
-                throw new \Exception('You do not have permission to delete this user', 403);
-            }
-        } elseif (!$deleter->isSuperadmin()) {
-            // Only superadmin and admin can delete users
+        // Hanya Superadmin yang dapat menghapus user
+        if (!$deleter->isSuperadmin()) {
             throw new \Exception('You do not have permission to delete users', 403);
         }
 
-        // Prevent deleting yourself
         if ($user->id === $deleter->id) {
             throw new \Exception('You cannot delete yourself', 403);
         }
 
-        // Log audit before deletion
         AuditLogService::log(
             action: AuditAction::DELETE_USER,
             userId: $deleter->id,
@@ -113,23 +105,15 @@ class UserService
 
     public function getUsersByCreator(User $creator)
     {
-        $query = User::with(['role', 'department', 'creator']);
+        // Selalu exclude diri sendiri dari daftar
+        $query = User::with(['role', 'department', 'creator'])
+            ->where('id', '!=', $creator->id);
 
+        // Hanya Superadmin yang dapat melihat semua user
         if ($creator->isSuperadmin()) {
-            // Superadmin can see all users
             return $query->get();
         }
 
-        if ($creator->isAdmin()) {
-            // Admin can see all users in their department
-            if ($creator->department_id) {
-                return $query->where('department_id', $creator->department_id)->get();
-            }
-            // If admin has no department, return empty
-            return collect([]);
-        }
-
-        // Operators and users cannot see other users
         return collect([]);
     }
 }

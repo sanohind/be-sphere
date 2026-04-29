@@ -23,6 +23,8 @@ class User extends Authenticatable implements JWTSubject
         'nik',
         'phone_number',
         'avatar',
+        'password_reset_token',
+        'password_reset_expires_at',
         'role_id',
         'department_id',
         'is_active',
@@ -38,6 +40,7 @@ class User extends Authenticatable implements JWTSubject
     protected $casts = [
         'email_verified_at' => 'datetime',
         'last_login_at' => 'datetime',
+        'password_reset_expires_at' => 'datetime',
         'is_active' => 'boolean',
     ];
 
@@ -94,34 +97,27 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(AuditLog::class);
     }
 
+    public function appAccesses(): HasMany
+    {
+        return $this->hasMany(UserAppAccess::class);
+    }
+
     // Helper Methods
+
     public function isSuperadmin(): bool
     {
-        return $this->role->level === 1;
+        return $this->role?->slug === 'superadmin';
     }
 
-    public function isAdmin(): bool
-    {
-        return $this->role->level === 2;
-    }
-
-    public function isOperator(): bool
-    {
-        return $this->role->level === 3;
-    }
-
+    /**
+     * Hanya Superadmin yang dapat membuat user.
+     * Superadmin tidak dapat membuat Superadmin lain.
+     */
     public function canCreateUser(Role $roleToCreate): bool
     {
-        // Superadmin bisa buat semua role
         if ($this->isSuperadmin()) {
-            return true;
+            return $roleToCreate->slug !== 'superadmin';
         }
-
-        // Admin hanya bisa buat operator di departmentnya
-        if ($this->isAdmin()) {
-            return $roleToCreate->level === 3;
-        }
-
         return false;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -10,60 +11,21 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Superadmin
-        $superadmin = User::create([
-            'email' => 'superadmin@besphere.com',
-            'username' => 'superadmin',
-            'password' => Hash::make('password'),
-            'name' => 'Super Administrator',
-            'nik' => 'SA001',
-            'phone_number' => '081234567890',
-            'role_id' => 1, // superadmin
-            'department_id' => null,
-            'created_by' => null,
-            'is_active' => true,
-        ]);
+        $roleSuperadmin = Role::where('slug', 'superadmin')->first();
 
-        // 2. Admin Warehouse 
-        $zaki = User::create([
-            'email' => 'zaki@besphere.com',
-            'username' => 'zaki',
-            'password' => Hash::make('password'),
-            'name' => 'Zaki',
-            'nik' => 'WH001',
-            'phone_number' => '081234567891',
-            'role_id' => 2, // admin
-            'department_id' => 2, // Warehouse
-            'created_by' => $superadmin->id,
-            'is_active' => true,
-        ]);
-
-        // 3. Admin Finance 
-        $ahmad = User::create([
-            'email' => 'ahmad@besphere.com',
-            'username' => 'ahmad',
-            'password' => Hash::make('password'),
-            'name' => 'Ahmad',
-            'nik' => 'FIN001',
-            'phone_number' => '081234567892',
-            'role_id' => 2, // admin
-            'department_id' => 3, // Finance
-            'created_by' => $superadmin->id,
-            'is_active' => true,
-        ]);
-
-        // 4. Operator Warehouse 
-        User::create([
-            'email' => 'ichwan@besphere.com',
-            'username' => 'ichwan',
-            'password' => Hash::make('password'),
-            'name' => 'Ichwan',
-            'nik' => 'WH002',
-            'phone_number' => '081234567893',
-            'role_id' => 3, // operator
-            'department_id' => 2, // Warehouse
-            'created_by' => $zaki->id,
-            'is_active' => true,
-        ]);
+        User::firstOrCreate(
+            ['username' => 'superadmin'],
+            [
+                'email'        => 'superadmin@besphere.com',
+                'password'     => Hash::make('password'),
+                'name'         => 'Super Administrator',
+                'nik'          => null,
+                'phone_number' => '081234567890',
+                'role_id'      => $roleSuperadmin?->id,
+                'department_id'=> null,
+                'created_by'   => null,
+                'is_active'    => true,
+            ]
+        );
     }
 }

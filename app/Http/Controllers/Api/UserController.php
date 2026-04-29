@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ResetPasswordMail;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -42,16 +45,23 @@ class UserController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        // Konversi empty string ke null untuk field nullable sebelum validasi
+        $request->merge([
+            'nik'           => $request->nik ?: null,
+            'phone_number'  => $request->phone_number ?: null,
+            'department_id' => $request->department_id ?: null,
+        ]);
+
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|unique:users,email',
-            'username' => 'required|string|unique:users,username|max:50',
-            'password' => 'required|string|min:6',
-            'name' => 'required|string|max:100',
-            'nik' => 'nullable|string|unique:users,nik|max:20',
-            'phone_number' => 'nullable|string|max:20',
-            'role_id' => 'required|exists:roles,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'is_active' => 'nullable|boolean',
+            'email'         => 'required|email|unique:users,email',
+            'username'      => 'required|string|unique:users,username|max:50',
+            'password'      => 'required|string|min:6',
+            'name'          => 'required|string|max:100',
+            'nik'           => 'sometimes|nullable|string|max:20|unique:users,nik',
+            'phone_number'  => 'sometimes|nullable|string|max:20',
+            'role_id'       => 'required|exists:roles,id',
+            'department_id' => 'sometimes|nullable|exists:departments,id',
+            'is_active'     => 'sometimes|nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -126,16 +136,23 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user): JsonResponse
     {
+        // Konversi empty string ke null untuk field nullable sebelum validasi
+        $request->merge([
+            'nik'           => $request->has('nik') ? ($request->nik ?: null) : $request->nik,
+            'phone_number'  => $request->has('phone_number') ? ($request->phone_number ?: null) : $request->phone_number,
+            'department_id' => $request->has('department_id') ? ($request->department_id ?: null) : $request->department_id,
+        ]);
+
         $validator = Validator::make($request->all(), [
-            'email' => 'sometimes|email|unique:users,email,' . $user->id,
-            'username' => 'sometimes|string|unique:users,username,' . $user->id . '|max:50',
-            'password' => 'sometimes|string|min:6',
-            'name' => 'sometimes|string|max:100',
-            'nik' => 'nullable|string|unique:users,nik,' . $user->id . '|max:20',
-            'phone_number' => 'nullable|string|max:20',
-            'role_id' => 'sometimes|exists:roles,id',
-            'department_id' => 'nullable|exists:departments,id',
-            'is_active' => 'sometimes|boolean',
+            'email'         => 'sometimes|email|unique:users,email,' . $user->id,
+            'username'      => 'sometimes|string|unique:users,username,' . $user->id . '|max:50',
+            'password'      => 'sometimes|string|min:6',
+            'name'          => 'sometimes|string|max:100',
+            'nik'           => 'sometimes|nullable|string|unique:users,nik,' . $user->id . '|max:20',
+            'phone_number'  => 'sometimes|nullable|string|max:20',
+            'role_id'       => 'sometimes|exists:roles,id',
+            'department_id' => 'sometimes|nullable|exists:departments,id',
+            'is_active'     => 'sometimes|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -194,22 +211,70 @@ class UserController extends Controller
     }
 
     /**
+     * Send Password Reset Email (Superadmin only)
+     *
+     * @group User Management
+     * @authenticated
+     */
+    public function sendResetPassword(User $user): JsonResponse
+    {
+        $admin = Auth::user();
+
+        if (!$admin->isSuperadmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only superadmin can send password reset emails.',
+            ], 403);
+        }
+
+        // Generate fresh token (valid 24 hours)
+        $token = Str::random(64);
+        $user->update([
+            'password_reset_token'      => $token,
+            'password_reset_expires_at' => now()->addHours(24),
+        ]);
+
+        // Send reset email
+        try {
+            Mail::to($user->email)->send(new ResetPasswordMail($user, $token));
+        } catch (\Exception $e) {
+            \Log::error('Failed to send reset password email to ' . $user->email . ': ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send reset password email. Please check mail configuration.',
+            ], 500);
+        }
+
+        // Log audit
+        \App\Services\AuditLogService::log(
+            action: \App\Enums\AuditAction::UPDATE_USER,
+            userId: $admin->id,
+            entityType: 'user',
+            entityId: $user->id,
+            newValues: ['action' => 'password_reset_email_sent', 'target_email' => $user->email]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password reset email has been sent to ' . $user->email,
+        ]);
+    }
+
+    /**
      * Get Available Roles (based on creator permission)
-     * 
+     *
      * @group User Management
      * @authenticated
      */
     public function availableRoles(): JsonResponse
     {
         $creator = Auth::user();
-        
+
         if ($creator->isSuperadmin()) {
-            // Superadmin can see all roles
-            $roles = Role::where('is_active', true)->get();
-        } elseif ($creator->isAdmin()) {
-            // Admin can only see operator role
+            // Superadmin dapat assign semua role kecuali Superadmin itu sendiri
             $roles = Role::where('is_active', true)
-                ->where('level', 3)
+                ->where('slug', '!=', 'superadmin')
+                ->orderBy('level')
                 ->get();
         } else {
             $roles = collect([]);

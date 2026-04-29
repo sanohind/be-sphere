@@ -10,24 +10,21 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         $roles = [
-            // Level 1: Superadmin
-            ['name' => 'Super Admin', 'slug' => 'superadmin', 'level' => 1],
-            
-            // Level 2: Admin
-            ['name' => 'Admin', 'slug' => 'admin', 'level' => 2],
-            
-            // Level 3: Operator
-            ['name' => 'Operator', 'slug' => 'operator', 'level' => 3],
+            // Level 1: Superadmin — hak penuh, bypass akses
+            ['name' => 'Super Admin',          'slug' => 'superadmin',         'level' => 1, 'is_active' => true],
 
-            // Level 4: Presdir/GM
-            ['name' => 'Presdir/GM', 'slug' => 'presdir-gm', 'level' => 4],
-
-            // Level 5: Manager
-            ['name' => 'Manager', 'slug' => 'manager', 'level' => 5],
+            // Level 2–8: Jabatan struktural (pengguna biasa)
+            ['name' => 'President Director',   'slug' => 'president-director', 'level' => 2, 'is_active' => true],
+            ['name' => 'Division Head',        'slug' => 'division-head',      'level' => 3, 'is_active' => true],
+            ['name' => 'General Manager',      'slug' => 'general-manager',    'level' => 4, 'is_active' => true],
+            ['name' => 'Manager',              'slug' => 'manager',            'level' => 5, 'is_active' => true],
+            ['name' => 'Supervisor',           'slug' => 'supervisor',         'level' => 6, 'is_active' => true],
+            ['name' => 'Leader',               'slug' => 'leader',             'level' => 7, 'is_active' => true],
+            ['name' => 'Staff',                'slug' => 'staff',              'level' => 8, 'is_active' => true],
         ];
 
         foreach ($roles as $role) {
-            Role::create($role);
+            Role::firstOrCreate(['slug' => $role['slug']], $role);
         }
     }
 }
