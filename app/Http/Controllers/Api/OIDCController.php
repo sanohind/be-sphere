@@ -52,7 +52,7 @@ class OIDCController extends Controller
     /**
      * Authorization Endpoint
      */
-    public function authorize(Request $request)
+    public function authorizeClient(Request $request)
     {
         // 1. Try to get User from Session (if using Web Guard)
         $user = auth()->user();

@@ -128,8 +128,8 @@ class DashboardController extends Controller
         // SSO mode: oidc or jwt
         $ssoMode = env('SSO_MODE', 'jwt');
 
-        // Force OIDC for AMS
-        if ($projectId === 'ams') {
+        // Force OIDC for AMS and CCH (Migration Phase 1)
+        if ($projectId === 'ams' || $projectId === 'cch') {
             $ssoMode = 'oidc';
         }
 
@@ -185,7 +185,10 @@ class DashboardController extends Controller
         $token    = JWTAuth::fromUser($user);
         $urlParts = explode('#', $projectUrl);
         $baseUrl  = rtrim($urlParts[0], '/');
-        $usesHashRouting = str_contains($projectUrl, '#');
+
+        // Define which apps strictly use HashRouting
+        $hashRoutingApps = ['scope', 'ams', 'cch'];
+        $usesHashRouting = str_contains($projectUrl, '#') || in_array($projectId, $hashRoutingApps);
 
         $callbackPath = $usesHashRouting ? '/#/sso/callback' : '/sso/callback';
         $urlWithToken = $baseUrl . $callbackPath . '?token=' . $token;
