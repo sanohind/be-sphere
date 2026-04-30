@@ -293,7 +293,7 @@ class OIDCController extends Controller
                         'name' => $user->name,
                         'nik' => $user->nik,
                         'phone_number' => $user->phone_number,
-                        'avatar' => $user->avatar ? asset('storage/' . $user->avatar) : null,
+                        'avatar' => $user->avatar,
                         'role' => [
                             'id' => $user->role->id,
                             'name' => $user->role->name,
