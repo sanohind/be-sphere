@@ -112,31 +112,27 @@ class DashboardController extends Controller
         }
 
         $projectUrl = $appConfig['url'];
+        $authMode   = $appConfig['auth_mode'] ?? 'jwt';
 
-        // Public projects: return URL directly without token
-        $publicProjects = ['arrival-dashboard', 'arrival-check'];
-        if (in_array($projectId, $publicProjects)) {
+        // 'public' = halaman publik, 'direct' = auth diurus sistem tujuan sendiri
+        // Keduanya cukup return URL tanpa token apapun
+        if ($authMode === 'public' || $authMode === 'direct') {
             return response()->json([
                 'success' => true,
                 'data' => [
                     'url'        => $projectUrl,
                     'project_id' => $projectId,
+                    'mode'       => $authMode,
                 ],
             ]);
         }
 
-        // SSO mode: oidc or jwt
-        $ssoMode = env('SSO_MODE', 'jwt');
-
-        // Force OIDC for AMS and CCH (Migration Phase 1)
-        if ($projectId === 'ams' || $projectId === 'cch') {
-            $ssoMode = 'oidc';
-        }
-
-        if ($ssoMode === 'oidc') {
+        // 'oidc' = gunakan OIDC authorization flow
+        if ($authMode === 'oidc') {
             return $this->getOIDCUrl($user, $projectId, $projectUrl);
         }
 
+        // 'jwt' = lampirkan JWT token via SSO callback (default)
         return $this->getJWTUrl($user, $projectId, $projectUrl);
     }
 
@@ -187,7 +183,7 @@ class DashboardController extends Controller
         $baseUrl  = rtrim($urlParts[0], '/');
 
         // Define which apps strictly use HashRouting
-        $hashRoutingApps = ['scope', 'ams', 'cch'];
+        $hashRoutingApps = ['scope', 'ams', 'cch', 'andon'];
         $usesHashRouting = str_contains($projectUrl, '#') || in_array($projectId, $hashRoutingApps);
 
         $callbackPath = $usesHashRouting ? '/#/sso/callback' : '/sso/callback';
