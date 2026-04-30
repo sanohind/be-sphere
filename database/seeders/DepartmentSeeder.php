@@ -29,6 +29,7 @@ class DepartmentSeeder extends Seeder
             ['name' => 'Safety',                     'code' => 'SHE',  'is_active' => true],
             ['name' => 'Accounting',                 'code' => 'ACC',  'is_active' => true],
             ['name' => 'Jishuken',                   'code' => 'JSK',  'is_active' => true],
+            ['name' => 'Top Management',             'code' => 'TOP', 'is_active' => true],
         ];
 
         foreach ($departments as $dept) {

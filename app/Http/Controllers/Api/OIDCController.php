@@ -73,6 +73,17 @@ class OIDCController extends Controller
 
         // 3. If still not authenticated, redirect to Sphere FE Login
         if (!$user || !($user instanceof \App\Models\User)) {
+            // Support for prompt=none (Silent Authentication)
+            // If prompt=none and user is not authenticated, we must return login_required error
+            if ($request->query('prompt') === 'none') {
+                $redirectUri = $request->query('redirect_uri');
+                $state = $request->query('state');
+                if ($redirectUri) {
+                    $errorUrl = $redirectUri . (strpos($redirectUri, '?') !== false ? '&' : '?') . 'error=login_required' . ($state ? '&state=' . urlencode($state) : '');
+                    return redirect()->away($errorUrl);
+                }
+            }
+
             // Get the current full URL to return to
             $returnUrl = $request->fullUrl();
 
