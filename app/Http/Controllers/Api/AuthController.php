@@ -369,6 +369,7 @@ class AuthController extends Controller
         
         if (!$isWindows) {
             putenv('NUMBA_CACHE_DIR=/tmp');
+            putenv('U2NET_HOME=/var/www/.u2net');
         }
 
         $cmd = $pythonCmd . " -m backgroundremover.cmd.cli -i " . escapeshellarg($tempInput) . " -o " . escapeshellarg($tempOutput) . " 2>&1";
