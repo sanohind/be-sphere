@@ -364,7 +364,14 @@ class AuthController extends Controller
 
         // Run the backgroundremover command using python module syntax to avoid PATH issues
         // Using escapeshellarg to prevent command injection
-        $cmd = "python -m backgroundremover.cmd.cli -i " . escapeshellarg($tempInput) . " -o " . escapeshellarg($tempOutput) . " 2>&1";
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        $pythonCmd = $isWindows ? 'python' : 'python3';
+        
+        if (!$isWindows) {
+            putenv('NUMBA_CACHE_DIR=/tmp');
+        }
+
+        $cmd = $pythonCmd . " -m backgroundremover.cmd.cli -i " . escapeshellarg($tempInput) . " -o " . escapeshellarg($tempOutput) . " 2>&1";
         exec($cmd, $output, $returnVar);
 
         if ($returnVar === 0 && file_exists($tempOutput)) {
