@@ -17,7 +17,7 @@ class UserSeeder extends Seeder
             ['username' => 'superadmin'],
             [
                 'email'        => 'superadmin@besphere.com',
-                'password'     => Hash::make('password'),
+                'password'     => Hash::make('1234abcd'),
                 'name'         => 'Super Administrator',
                 'nik'          => null,
                 'phone_number' => '081234567890',
